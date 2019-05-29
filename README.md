@@ -8,6 +8,10 @@ This is a demo module for ***PrestaShop 1.6.1*** but can be used safely on your 
 
 Adds manufacturer on products list
 
+![Product list with Manufacturer name](https://user-images.githubusercontent.com/5262628/58557959-e9d29580-821f-11e9-89d5-ffa7ffd30d5a.png)
+![Module configuration](https://user-images.githubusercontent.com/5262628/58557976-f22ad080-821f-11e9-9525-cdc35aa230ca.png)
+![Product list with Manufacturer logo](https://user-images.githubusercontent.com/5262628/58557965-ee974980-821f-11e9-9ee9-a172c79d04a1.png)
+
 ## Reporting issues
 
 You can report issues with this module in this repository. [Click here to report an issue][report-issue]. 
