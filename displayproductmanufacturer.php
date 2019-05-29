@@ -55,12 +55,12 @@ class DisplayProductManufacturer extends Module
     {
         $this->name = 'displayproductmanufacturer';
         $this->tab = 'administration';
-        $this->version = '1.0.0';
+        $this->version = '2.0.0';
         $this->author = 'Matt75';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = [
-            'min' => '1.6.1.0',
-            'max' => '1.6.1.99', // Because product list is migrated on 1.7
+            'min' => '1.7.0.0',
+            'max' => '1.7.7.99', // Because product list should be rebuild
         ];
 
         parent::__construct();
@@ -152,50 +152,44 @@ class DisplayProductManufacturer extends Module
     }
 
     /**
-     * Append custom fields.
+     * Manage the list of product fields available in the Product Catalog page.
      *
      * @param array $params
      */
     public function hookActionAdminProductsListingFieldsModifier(array $params)
     {
-        // If hook is called in AdminController::processFilter() we have to check existence
-        if (isset($params['select'])) {
-            $params['select'] .= ', a.id_manufacturer, man.name AS manufacturer_name';
-        }
-
-        // If hook is called in AdminController::processFilter() we have to check existence
-        if (isset($params['join'])) {
-            $params['join'] .= 'LEFT JOIN ' . _DB_PREFIX_ . 'manufacturer AS man ON (a.id_manufacturer = man.id_manufacturer)';
-        }
-
-        $params['fields']['manufacturer_name'] = [
-            'title' => $this->l('Manufacturer'),
-            'align' => 'text-center',
-            'class' => 'fixed-width-xs',
-            'filter_key' => 'man!name',
-            'order_key' => 'man!name',
+        $params['sql_select']['id_manufacturer'] = [
+            'table' => 'p',
+            'field' => 'id_manufacturer',
+            'filtering' => ' %s ',
         ];
 
-        if (Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)) {
-            $params['fields']['manufacturer_name']['icon'] = true;
-            $params['fields']['manufacturer_name']['class'] .= ' column-img-manufacturer';
-        }
+        $params['sql_select']['manufacturer_name'] = [
+            'table' => 'man',
+            'field' => 'name',
+            'filtering' => 'LIKE \'%%%s%%\'',
+        ];
+
+        $params['sql_table']['man'] = [
+            'table' => 'manufacturer',
+            'join' => 'LEFT JOIN',
+            'on' => 'p.`id_manufacturer` = man.`id_manufacturer`',
+        ];
     }
 
     /**
-     * Set additional data.
+     * Manage the list of products available in the Product Catalog page.
      *
      * @param array $params
      */
     public function hookActionAdminProductsListingResultsModifier(array $params)
     {
-        if (Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)) {
-            foreach ($params['list'] as $key => $fields) {
-                if (isset($fields['id_manufacturer'], $fields['manufacturer_name'])) {
-                    $params['list'][$key]['manufacturer_name'] = [
-                        'src' => '../m/' . (int) $fields['id_manufacturer'] . '.jpg',
-                        'alt' => Tools::safeOutput($fields['manufacturer_name']),
-                    ];
+        if (isset($params['products'])
+            && Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)
+        ) {
+            foreach ($params['products'] as $key => $product) {
+                if ($product['id_manufacturer']) {
+                    $params['products'][$key]['manufacturer_image'] = $this->context->link->getMediaLink(_THEME_MANU_DIR_ . $product['id_manufacturer'] . '.jpg');
                 }
             }
         }

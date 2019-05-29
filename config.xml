@@ -2,7 +2,7 @@
 <module>
 	<name>displayproductmanufacturer</name>
 	<displayName><![CDATA[Display Manufacturer on Product list]]></displayName>
-	<version><![CDATA[1.0.0]]></version>
+	<version><![CDATA[2.0.0]]></version>
 	<description><![CDATA[Adds Manufacturer on Product list]]></description>
 	<author><![CDATA[Matt75]]></author>
 	<tab><![CDATA[administration]]></tab>
