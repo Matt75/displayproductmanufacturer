@@ -1,0 +1,13 @@
+includes:
+	- %currentWorkingDirectory%/vendor/prestashop/php-dev-tools/phpstan/ps-module-extension.neon
+
+parameters:
+	paths:
+		# From PHPStan 0.12, paths to check are relative to the neon file
+		- ../../controllers
+		- ../../displayproductmanufacturer.php
+	reportUnmatchedIgnoredErrors: false
+	ignoreErrors:
+		- '#Property ModuleCore::\$version \(float\) does not accept string.#'
+
+	level: 5

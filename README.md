@@ -1,12 +1,25 @@
 # Display product manufacturer
 
-This is a demo module for ***PrestaShop 1.7*** but can be used safely on your PrestaShop instance
-
-***For PrestaShop 1.6, another version of this is required.***
+This is a demo module but can be used safely on your PrestaShop instance
 
 ## About
 
-Adds manufacturer on products list
+Adds manufacturer column on product list
+
+## Known issue on PrestaShop 1.7
+There no proper way to add custom filters currently.
+I made a trick to make the filter field works, but it doesn't support the pagination and doesn't manage empty results.
+This issue will be fixed when the AdminProductController will be refactored to use the Grid component likes others Symfony based controllers.
+
+## Screenshots
+
+### PrestaShop 1.6
+
+![Product list with Manufacturer name](https://user-images.githubusercontent.com/5262628/58557959-e9d29580-821f-11e9-89d5-ffa7ffd30d5a.png)
+![Module configuration](https://user-images.githubusercontent.com/5262628/58557976-f22ad080-821f-11e9-9525-cdc35aa230ca.png)
+![Product list with Manufacturer logo](https://user-images.githubusercontent.com/5262628/58557965-ee974980-821f-11e9-9ee9-a172c79d04a1.png)
+
+### PrestaShop 1.7
 
 ![Product list with Manufacturer name](https://user-images.githubusercontent.com/5262628/58573778-ba7f5100-823e-11e9-9d85-6f08784a1c2a.png)
 ![Module configuration](https://user-images.githubusercontent.com/5262628/58557976-f22ad080-821f-11e9-9525-cdc35aa230ca.png)

@@ -17,7 +17,18 @@
       "php": "5.6.0"
     },
     "preferred-install": "dist",
+    "classmap-authoritative": true,
+    "optimize-autoloader": true,
+    "sort-packages": true,
     "prepend-autoloader": false
+  },
+  "scripts": {
+    "set-license-header": [
+      "@php ./vendor/bin/header-stamp --license=\"assets/afl.txt\" --exclude=\".github,node_modules,vendor\""
+    ]
+  },
+  "require-dev": {
+    "prestashop/php-dev-tools": "3.5"
   },
   "type": "prestashop-module"
 }

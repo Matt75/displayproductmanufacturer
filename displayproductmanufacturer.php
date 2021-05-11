@@ -1,27 +1,21 @@
 <?php
 /**
- * 2007-2019 PrestaShop SA and Contributors
+ * Copyright since 2007 PrestaShop SA and Contributors
+ * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
  *
  * NOTICE OF LICENSE
  *
- * This source file is subject to the Academic Free License (AFL 3.0)
- * that is bundled with this package in the file LICENSE.txt.
+ * This source file is subject to the Academic Free License version 3.0
+ * that is bundled with this package in the file LICENSE.md.
  * It is also available through the world-wide-web at this URL:
  * https://opensource.org/licenses/AFL-3.0
  * If you did not receive a copy of the license and are unable to
  * obtain it through the world-wide-web, please send an email
  * to license@prestashop.com so we can send you a copy immediately.
  *
- * DISCLAIMER
- *
- * Do not edit or add to this file if you wish to upgrade PrestaShop to newer
- * versions in the future. If you wish to customize PrestaShop for your
- * needs please refer to https://www.prestashop.com for more information.
- *
- * @author    PrestaShop SA <contact@prestashop.com>
- * @copyright 2007-2019 PrestaShop SA and Contributors
- * @license   https://opensource.org/licenses/AFL-3.0  Academic Free License (AFL 3.0)
- * International Registered Trademark & Property of PrestaShop SA
+ * @author    PrestaShop SA and Contributors <contact@prestashop.com>
+ * @copyright Since 2007 PrestaShop SA and Contributors
+ * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License version 3.0
  */
 if (!defined('_PS_VERSION_')) {
     exit;
@@ -49,24 +43,30 @@ class DisplayProductManufacturer extends Module
     const CONFIGURATION_KEY_SHOW_LOGO = 'DISPLAYPRODUCTMANUFACTURER_SHOW_LOGO';
 
     /**
+     * @var bool
+     */
+    private $isPrestaShop16;
+
+    /**
      * Constructor.
      */
     public function __construct()
     {
         $this->name = 'displayproductmanufacturer';
         $this->tab = 'administration';
-        $this->version = '2.0.0';
+        $this->version = '3.0.0';
         $this->author = 'Matt75';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = [
-            'min' => '1.7.0.0',
-            'max' => '1.7.7.99', // Because product list should be rebuild
+            'min' => '1.6.1.0',
+            'max' => '1.7.9.99',
         ];
+        $this->isPrestaShop16 = (bool) version_compare(_PS_VERSION_, '1.7.0.0', '<=');
 
         parent::__construct();
 
         $this->displayName = $this->l('Display Manufacturer on Product list');
-        $this->description = $this->l('Adds Manufacturer on Product list');
+        $this->description = $this->l('Adds Manufacturer column on Product list');
     }
 
     /**
@@ -124,6 +124,7 @@ class DisplayProductManufacturer extends Module
 
         if ($id_tab) {
             $tab = new Tab($id_tab);
+
             return $tab->delete();
         }
 
@@ -152,41 +153,84 @@ class DisplayProductManufacturer extends Module
     }
 
     /**
-     * Manage the list of product fields available in the Product Catalog page.
+     * Append custom fields.
      *
      * @param array $params
      */
     public function hookActionAdminProductsListingFieldsModifier(array $params)
     {
-        $params['sql_select']['id_manufacturer'] = [
-            'table' => 'p',
-            'field' => 'id_manufacturer',
-            'filtering' => ' %s ',
-        ];
+        if ($this->isPrestaShop16) {
+            // If hook is called in AdminController::processFilter() we have to check existence
+            if (isset($params['select'])) {
+                $params['select'] .= ', a.id_manufacturer, man.name AS manufacturer_name';
+            }
 
-        $params['sql_select']['manufacturer_name'] = [
-            'table' => 'man',
-            'field' => 'name',
-            'filtering' => 'LIKE \'%%%s%%\'',
-        ];
+            // If hook is called in AdminController::processFilter() we have to check existence
+            if (isset($params['join'])) {
+                $params['join'] .= 'LEFT JOIN ' . _DB_PREFIX_ . 'manufacturer AS man ON (a.id_manufacturer = man.id_manufacturer)';
+            }
 
-        $params['sql_table']['man'] = [
-            'table' => 'manufacturer',
-            'join' => 'LEFT JOIN',
-            'on' => 'p.`id_manufacturer` = man.`id_manufacturer`',
-        ];
+            $params['fields']['manufacturer_name'] = [
+                'title' => $this->l('Manufacturer'),
+                'align' => 'text-center',
+                'class' => 'fixed-width-xs',
+                'filter_key' => 'man!name',
+                'order_key' => 'man!name',
+            ];
+
+            if (Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)) {
+                $params['fields']['manufacturer_name']['icon'] = true;
+                $params['fields']['manufacturer_name']['class'] .= ' column-img-manufacturer';
+            }
+        } else {
+            $params['sql_select']['id_manufacturer'] = [
+                'table' => 'p',
+                'field' => 'id_manufacturer',
+                'filtering' => ' %s ',
+            ];
+
+            $params['sql_select']['manufacturer_name'] = [
+                'table' => 'man',
+                'field' => 'name',
+                'filtering' => 'LIKE \'%%%s%%\'',
+            ];
+
+            $params['sql_table']['man'] = [
+                'table' => 'manufacturer',
+                'join' => 'LEFT JOIN',
+                'on' => 'p.`id_manufacturer` = man.`id_manufacturer`',
+            ];
+
+            // There no proper way currently to add custom filters
+            // This tricks doesn't manage pagination and empty results
+            $manufacturer_filter = Tools::getValue('filter_column_name_manufacturer');
+            if (!empty($manufacturer_filter) && Validate::isCatalogName($manufacturer_filter)) {
+                $params['sql_where'][] .= sprintf('man.name LIKE "%%%s%%"', pSQL($manufacturer_filter));
+            }
+        }
     }
 
     /**
-     * Manage the list of products available in the Product Catalog page.
+     * Set additional data.
      *
      * @param array $params
      */
     public function hookActionAdminProductsListingResultsModifier(array $params)
     {
-        if (isset($params['products'])
-            && Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)
-        ) {
+        if (!Configuration::get(static::CONFIGURATION_KEY_SHOW_LOGO)) {
+            return;
+        }
+
+        if ($this->isPrestaShop16 && !empty($params['list'])) {
+            foreach ($params['list'] as $key => $fields) {
+                if (isset($fields['id_manufacturer'], $fields['manufacturer_name'])) {
+                    $params['list'][$key]['manufacturer_name'] = [
+                        'src' => '../m/' . (int) $fields['id_manufacturer'] . '.jpg',
+                        'alt' => Tools::safeOutput($fields['manufacturer_name']),
+                    ];
+                }
+            }
+        } elseif (!$this->isPrestaShop16 && isset($params['products'])) {
             foreach ($params['products'] as $key => $product) {
                 if ($product['id_manufacturer']) {
                     $params['products'][$key]['manufacturer_image'] = $this->context->link->getMediaLink(_THEME_MANU_DIR_ . $product['id_manufacturer'] . '.jpg');
